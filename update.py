@@ -1,14 +1,17 @@
-from pymongo import MongoClient
-from requests import get as rget
-from pkg_resources import working_set
-from os import path as ospath, environ
-from dotenv import load_dotenv, dotenv_values
-from subprocess import run as srun, call as scall
 from logging import FileHandler, StreamHandler, INFO, basicConfig, error as log_error, info as log_info
+from os import path as ospath, environ, remove
+from subprocess import run as srun, call as scall
+from pkg_resources import working_set
+from requests import get as rget
+from dotenv import load_dotenv, dotenv_values
+from pymongo import MongoClient
 
 if ospath.exists('log.txt'):
     with open('log.txt', 'r+') as f:
         f.truncate(0)
+
+if ospath.exists('rlog.txt'):
+    remove('rlog.txt')
 
 basicConfig(format="[%(asctime)s] [%(levelname)s] - %(message)s",
             datefmt="%d-%b-%y %I:%M:%S %p",
@@ -37,7 +40,7 @@ if len(DATABASE_URL) == 0:
 
 if DATABASE_URL is not None:
     conn = MongoClient(DATABASE_URL)
-    db = conn.mltb
+    db = conn.wzmlx
     old_config = db.settings.deployConfig.find_one({'_id': bot_id})
     config_dict = db.settings.config.find_one({'_id': bot_id})
     if old_config is not None:
@@ -52,23 +55,23 @@ if DATABASE_URL is not None:
 UPGRADE_PACKAGES = environ.get('UPGRADE_PACKAGES', 'False') 
 if UPGRADE_PACKAGES.lower() == 'true':
     packages = [dist.project_name for dist in working_set]
-    scall("pip install " + ' '.join(packages), shell=True)
+    scall("uv pip install --system " + ' '.join(packages), shell=True)
 
-UPSTREAM_REPO = environ.get('UPSTREAM_REPO', 'https://github.com/HarixTGX/MLTB')
+UPSTREAM_REPO = environ.get('UPSTREAM_REPO', '')
 if len(UPSTREAM_REPO) == 0:
-    UPSTREAM_REPO = None
+    UPSTREAM_REPO = "https://github.com/HarixTGX/LMTB"
 
 UPSTREAM_BRANCH = environ.get('UPSTREAM_BRANCH', '')
 if len(UPSTREAM_BRANCH) == 0:
-    UPSTREAM_BRANCH = 'master'
+    UPSTREAM_BRANCH = 'update'
 
 if UPSTREAM_REPO is not None:
     if ospath.exists('.git'):
         srun(["rm", "-rf", ".git"])
 
     update = srun([f"git init -q \
-                     && git config --global user.email harixtg@gmail.com \
-                     && git config --global user.name HarixTGX \
+                     && git config --global user.email doc.adhikari@gmail.com \
+                     && git config --global user.name weebzone \
                      && git add . \
                      && git commit -sm update -q \
                      && git remote add origin {UPSTREAM_REPO} \
@@ -81,4 +84,4 @@ if UPSTREAM_REPO is not None:
         log_info('Successfully updated with latest commits !!')
     else:
         log_error('Something went Wrong ! Retry or Ask Support !')
-    log_info(f'UPSTREAM_REPO : {UPSTREAM_REPO} | UPSTREAM_BRANCH : {UPSTREAM_BRANCH}')
+    log_info(f'UPSTREAM_REPO: {UPSTREAM_REPO} | UPSTREAM_BRANCH: {UPSTREAM_BRANCH}')
